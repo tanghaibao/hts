@@ -502,9 +502,22 @@ func (bh *Header) AddReference(r *Reference) error {
 		bh.refs[dupID] = r
 		return nil
 	}
-	if r.owner != nil || r.id >= 0 {
-		return errUsedReference
-	}
+	// The following check is disabled by @tanghaibao on Sep 2nd, 2018:
+	//
+	// Certain BAM files, such as the ones produced by a command similar to:
+	// $ samtools view -bt ref.fasta.fai reads.sam -o reads.bam
+	// will trigger errUsedReference, in the code block below
+	//
+	// These BAM file will show l_text of 0 (i.e. assuming no header text), as opposed
+	// to the full header with the references. As a result, the reference names will
+	// never be imported in bh.seenRefs, and as a result trigger the errUsedReference
+	//
+	// The check may still be useful in some scenarios though and I have not figured
+	// out the best way to circumvent this in a generic way.
+	//
+	// if r.owner != nil || r.id >= 0 {
+	// 	return errUsedReference
+	// }
 	r.owner = bh
 	r.id = int32(len(bh.refs))
 	bh.seenRefs[r.name] = r.id
